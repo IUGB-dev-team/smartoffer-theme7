@@ -1,0 +1,20 @@
+{
+  "_source": "mafibremoov.ci et moov-africa.ci, relevé du 29/09/2026. Prix en FCFA.",
+  "forfaits": [
+    {"debit_mbps": 50,   "prix": 15000, "prix_promo": 7500, "mobile": "60 min + 5 Go"},
+    {"debit_mbps": 100,  "prix": 15000, "prix_promo": null, "mobile": "240 min + 10 Go"},
+    {"debit_mbps": 200,  "prix": 20000, "prix_promo": null, "mobile": "240 min + 10 Go"},
+    {"debit_mbps": 300,  "prix": 25000, "prix_promo": null, "mobile": "240 min + 10 Go"},
+    {"debit_mbps": 500,  "prix": 60000, "prix_promo": null, "mobile": "500 min + 20 Go"},
+    {"debit_mbps": 1000, "prix": 100000, "prix_promo": null, "mobile": "aucun"}
+  ],
+  "equipements": {
+    "aucun":    {"nom": "Aucun équipement", "prix": 0},
+    "repeteur": {"nom": "Répéteur Wi-Fi AX2", "prix": 22000},
+    "fttr_1":   {"nom": "FTTR 1 principal + 1 secondaire", "prix": 130000},
+    "fttr_2":   {"nom": "FTTR 1 principal + 2 secondaires", "prix": 167500},
+    "fttr_3":   {"nom": "FTTR 1 principal + 3 secondaires", "prix": 202500},
+    "fttr_4":   {"nom": "FTTR 1 principal + 4 secondaires", "prix": 285000}
+  },
+  "hors_fibre": {"nom": "Box 4G Catégorie 6", "prix": 34900, "detail": "100 Go pour 1 mois, jusqu'à 150 Mb/s"}
+}
