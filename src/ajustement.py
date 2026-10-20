@@ -5,7 +5,7 @@ Après quelques semaines, on compare ce que le client consomme vraiment
 à ce qu'il paie, et on ajuste DANS LES DEUX SENS.
 Les noms des champs sont à caler avec la personne du thème 3.
 """
-from regles import PALIERS, prix_actuel
+from .regles import PALIERS, prix_actuel
 
 SEUIL_SATURE = 0.85      # utilise plus de 85 % du débit aux heures de pointe
 SEUIL_SOUS_UTILISE = 0.30

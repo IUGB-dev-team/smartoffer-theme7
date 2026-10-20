@@ -3,11 +3,12 @@ Génère des foyers fictifs mais réalistes, étiquetés avec l'offre adaptée.
 Moov ne nous donne pas ses données : on simule, puis le modèle pourra être
 réentraîné sur les vraies données plus tard.
 
-Lancer :  python generer_donnees.py   →  crée foyers_simules.csv
+Lancer (depuis la racine) :  python -m src.generer_donnees   →  crée data/foyers_simules.csv
 """
 import numpy as np
 import pandas as pd
-from regles import palier_par_regles, PALIERS
+from .regles import palier_par_regles, PALIERS
+from .config import FOYERS_PATH
 
 rng = np.random.default_rng(42)   # graine fixe = mêmes données à chaque lancement
 N = 5000
@@ -39,6 +40,6 @@ for i in df.index[bruit]:
 # le modèle apprend de 50 à 500 Mb/s, et recommander.py gère le 1 Gb/s par une règle.
 df["offre_mbps"] = df["offre_mbps"].clip(upper=500)
 
-df.to_csv("foyers_simules.csv", index=False)
-print(f"{N} foyers générés → foyers_simules.csv")
+df.to_csv(FOYERS_PATH, index=False)
+print(f"{N} foyers générés → {FOYERS_PATH}")
 print(df["offre_mbps"].value_counts().sort_index().to_string())

@@ -1,8 +1,10 @@
-# Versions à installer pour faire tourner SmartOffer
-# (le modèle doit être entraîné avec la même version de scikit-learn que celle qui l'utilise)
+# Bibliothèques à installer :  pip install -r requirements.txt
+# Le modèle doit être entraîné avec la même version de scikit-learn que celle qui l'utilise.
 pandas
 numpy
 scikit-learn==1.6.1
 joblib
 fastapi
 uvicorn
+httpx
+pytest

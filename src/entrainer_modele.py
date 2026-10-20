@@ -4,7 +4,7 @@ VERSION 2 — Le modèle d'IA : une régression logistique.
 C'est de la CLASSIFICATION : entrée = profil du foyer, sortie = palier de débit.
 Elle donne un poids à chaque réponse et calcule la probabilité de chaque offre.
 
-Lancer :  python entrainer_modele.py   →  crée modele_smartoffer.joblib
+Lancer (depuis la racine) :  python -m src.entrainer_modele   →  crée models/modele_smartoffer.joblib
 """
 import joblib
 import pandas as pd
@@ -13,9 +13,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 from sklearn.metrics import accuracy_score
-from regles import COLONNES
+from .regles import COLONNES
+from .config import FOYERS_PATH, MODELE_PATH
 
-df = pd.read_csv("foyers_simules.csv")
+df = pd.read_csv(FOYERS_PATH)
 X, y = df[COLONNES], df["offre_mbps"]
 
 # 80 % pour apprendre, 20 % pour tester sur des foyers jamais vus
@@ -46,5 +47,6 @@ for offre, proba in zip(modele.classes_, modele.predict_proba(exemple)[0]):
     print(f"  {offre:>4} Mb/s : {proba:.0%}")
 
 print()
-joblib.dump(modele, "modele_smartoffer.joblib")
-print("Modèle sauvegardé → modele_smartoffer.joblib")
+MODELE_PATH.parent.mkdir(exist_ok=True)
+joblib.dump(modele, MODELE_PATH)
+print(f"Modèle sauvegardé → {MODELE_PATH}")

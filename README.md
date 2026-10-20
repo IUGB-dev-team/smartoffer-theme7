@@ -18,19 +18,30 @@ Ce module s'intègre à l'application principale de l'équipe (basée sur le dia
 
 ---
 
-## Les fichiers
+## Organisation du projet
 
-| Fichier | Rôle |
-|---|---|
-| `catalogue.json` | Toutes les offres fibre Moov (débits, prix, équipements, Box 4G) |
-| `regles.py` | Version 1 : règles simples qui estiment le débit nécessaire et choisissent l'équipement |
-| `generer_donnees.py` | Crée 5 000 foyers simulés réalistes → `foyers_simules.csv` |
-| `entrainer_modele.py` | Entraîne la régression logistique → `modele_smartoffer.joblib` |
-| `recommander.py` | Le moteur complet : offre + équipement + explication + alerte budget + confiance |
-| `ajustement.py` | Ajuste l'offre à partir des données d'usage du diagnostic |
-| `api.py` | Le serveur FastAPI que l'application mobile appelle |
-| `requirements.txt` | Les bibliothèques à installer |
-| `foyers_simules.xlsx` | Les foyers simulés et la répartition des offres, à ouvrir dans Excel |
+```
+smartoffer-theme7/
+├── data/
+│   ├── catalogue.json          # toutes les offres fibre Moov (débits, prix, équipements, Box 4G)
+│   ├── foyers_simules.csv      # les 5 000 foyers simulés
+│   └── foyers_simules.xlsx     # les mêmes foyers + la répartition des offres, pour Excel
+├── models/
+│   └── modele_smartoffer.joblib  # le modèle entraîné
+├── src/                        # la logique de l'IA
+│   ├── config.py               # les chemins du projet
+│   ├── regles.py               # version 1 : règles simples (besoin en débit, équipement)
+│   ├── generer_donnees.py      # crée les foyers simulés
+│   ├── entrainer_modele.py     # entraîne la régression logistique
+│   ├── recommander.py          # le moteur complet : offre + équipement + explication + confiance
+│   └── ajustement.py           # ajuste l'offre avec les données d'usage du diagnostic
+├── server/
+│   └── api.py                  # le serveur FastAPI appelé par l'application
+├── tests/
+│   └── test_api.py             # 10 tests automatiques de l'API
+├── requirements.txt
+└── pytest.ini
+```
 
 ---
 
@@ -48,16 +59,19 @@ pip install -r requirements.txt
 
 ## Utilisation
 
-Dans l'ordre :
+Toutes les commandes se lancent **depuis la racine du projet** :
 
 ```
-python generer_donnees.py      # 1. crée les 5 000 foyers simulés
-python entrainer_modele.py     # 2. entraîne le modèle et affiche sa précision
-python recommander.py          # 3. teste le moteur sur 6 exemples de foyers
-uvicorn api:app --reload       # 4. lance le serveur
+python -m src.generer_donnees      # 1. crée les 5 000 foyers simulés
+python -m src.entrainer_modele     # 2. entraîne le modèle et affiche sa précision
+python -m src.recommander          # 3. teste le moteur sur 6 exemples de foyers
+pytest                             # 4. lance les 10 tests automatiques
+uvicorn server.api:app --reload    # 5. lance le serveur
 ```
 
 Ensuite, ouvrir **http://127.0.0.1:8000/docs** dans le navigateur pour tester l'API.
+
+Pour qu'un coéquipier sur le même Wi-Fi appelle le serveur : `uvicorn server.api:app --host 0.0.0.0 --port 8000`, puis utiliser l'adresse IPv4 de l'ordinateur (`ipconfig`).
 
 ---
 

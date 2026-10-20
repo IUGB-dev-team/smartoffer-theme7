@@ -6,9 +6,9 @@ puis on choisit le plus petit forfait qui couvre ce besoin.
 Ces règles servent aussi à étiqueter les données simulées (voir generer_donnees.py).
 """
 import json
-from pathlib import Path
+from .config import CATALOGUE_PATH
 
-CATALOGUE = json.loads((Path(__file__).parent / "catalogue.json").read_text(encoding="utf-8"))
+CATALOGUE = json.loads(CATALOGUE_PATH.read_text(encoding="utf-8"))
 PALIERS = [f["debit_mbps"] for f in CATALOGUE["forfaits"]]   # [50, 100, 200, 300, 500, 1000]
 
 # Les colonnes que le modèle utilise (= les réponses du questionnaire)

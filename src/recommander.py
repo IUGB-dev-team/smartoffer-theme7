@@ -1,15 +1,15 @@
 """
 Le moteur complet : réponses du questionnaire → offre + équipement + explication.
-C'est cette fonction que le serveur (api.py) appelle.
+C'est cette fonction que le serveur (server/api.py) appelle.
+Tester (depuis la racine) :  python -m src.recommander
 """
 import joblib
 import pandas as pd
-from pathlib import Path
-from regles import (CATALOGUE, COLONNES, PALIERS, besoin_mbps, palier_par_regles,
+from .config import MODELE_PATH
+from .regles import (CATALOGUE, COLONNES, PALIERS, besoin_mbps, palier_par_regles,
                     equipement_pour, prix_actuel, meilleur_rapport)
 
-_modele_path = Path(__file__).parent / "modele_smartoffer.joblib"
-MODELE = joblib.load(_modele_path) if _modele_path.exists() else None
+MODELE = joblib.load(MODELE_PATH) if MODELE_PATH.exists() else None
 
 
 def recommander(r: dict, promo: bool = True) -> dict:
