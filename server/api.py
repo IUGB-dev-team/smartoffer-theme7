@@ -6,12 +6,13 @@ Tester :  ouvrir http://127.0.0.1:8000/docs dans le navigateur
 """
 from typing import Optional
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from src.ajustement import ajuster
 from src.recommander import recommander
+from src import parrainage
 
 app = FastAPI(
     title="Fibre SmartOffer",
@@ -33,6 +34,19 @@ class Questionnaire(BaseModel):
     nb_pieces: int = Field(ge=1, le=12, description="Nombre de pièces à couvrir")
     budget: Optional[int] = Field(default=None, description="Budget mensuel en FCFA")
     eligible: bool = Field(default=True, description="Adresse couverte par la fibre")
+
+
+class NouveauParrain(BaseModel):
+    nom: str = Field(min_length=1)
+    telephone: str = Field(min_length=8)
+
+
+class InscriptionFilleul(BaseModel):
+    code: str
+    nom: str = Field(min_length=1)
+    telephone: str = Field(min_length=8)
+    commune: str = Field(description="Commune du filleul, pour vérifier la zone fibre")
+    questionnaire: Questionnaire
 
 
 class Usage(BaseModel):
@@ -61,3 +75,46 @@ def post_recommandation(q: Questionnaire):
 def post_ajustement(u: Usage):
     d = u.model_dump()
     return ajuster(d.pop("debit_actuel"), d)
+
+
+# ---------- Thème 5 : parrainage ----------
+
+def _erreur(e: parrainage.ErreurParrainage):
+    raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/parrainage/code")
+def post_code(p: NouveauParrain):
+    """Le client satisfait reçoit son code et son lien de parrainage."""
+    return parrainage.creer_code(p.nom, p.telephone)
+
+
+@app.post("/parrainage/inscription")
+def post_inscription(i: InscriptionFilleul):
+    """Le filleul s'inscrit avec le code et reçoit son offre personnalisée."""
+    q = i.questionnaire.model_dump()
+    q.pop("eligible", None)
+    for cle in ("streaming", "gaming", "teletravail"):
+        q[cle] = int(q[cle])
+    try:
+        return parrainage.inscrire_filleul(i.code, i.nom, i.telephone, i.commune, q)
+    except parrainage.ErreurParrainage as e:
+        _erreur(e)
+
+
+@app.post("/parrainage/filleul/{filleul_id}/avancer")
+def post_avancer(filleul_id: int):
+    """Démo : passe le filleul à l'étape suivante (inscrit → abonné → actif 3 mois)."""
+    try:
+        return parrainage.avancer_filleul(filleul_id)
+    except parrainage.ErreurParrainage as e:
+        _erreur(e)
+
+
+@app.get("/parrainage/{code}/filleuls")
+def get_filleuls(code: str):
+    """Le tableau de bord « Mes filleuls » du parrain."""
+    try:
+        return parrainage.mes_filleuls(code)
+    except parrainage.ErreurParrainage as e:
+        _erreur(e)

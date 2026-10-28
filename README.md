@@ -12,7 +12,8 @@ Ce module s'intègre à l'application principale de l'équipe (basée sur le dia
 
 1. **Démarrage à froid** : un nouveau client répond à 6 questions simples (personnes, appareils, streaming, jeu en ligne, télétravail, nombre de pièces). L'IA lui propose tout de suite une offre.
 2. **Ajustement** : après quelques semaines, les données d'usage du diagnostic (thème 3) permettent d'ajuster l'offre **dans les deux sens** : offre supérieure si la connexion est saturée, offre moins chère si elle est sous-utilisée, ou équipement (répéteur, FTTR) si c'est le Wi-Fi qui est faible.
-3. **Cas particuliers** :
+3. **Parrainage (thème 5)** : un client satisfait reçoit un code à partager. Son filleul s'inscrit avec le code, reçoit son offre personnalisée (grâce au moteur du thème 7), et s'il reste abonné 3 mois, les deux gagnent 1 mois offert.
+4. **Cas particuliers** :
    - client non éligible à la fibre → Box 4G ;
    - offre idéale au-dessus du budget → meilleure offre abordable, en le disant honnêtement au client.
 
@@ -25,7 +26,8 @@ smartoffer-theme7/
 ├── data/
 │   ├── catalogue.json          # toutes les offres fibre Moov (débits, prix, équipements, Box 4G)
 │   ├── foyers_simules.csv      # les 5 000 foyers simulés
-│   └── foyers_simules.xlsx     # les mêmes foyers + la répartition des offres, pour Excel
+│   ├── foyers_simules.xlsx     # les mêmes foyers + la répartition des offres, pour Excel
+│   └── zones_eligibles.json    # communes couvertes par la fibre (liste simulée pour la démo)
 ├── models/
 │   └── modele_smartoffer.joblib  # le modèle entraîné
 ├── src/                        # la logique de l'IA
@@ -34,11 +36,13 @@ smartoffer-theme7/
 │   ├── generer_donnees.py      # crée les foyers simulés
 │   ├── entrainer_modele.py     # entraîne la régression logistique
 │   ├── recommander.py          # le moteur complet : offre + équipement + explication + confiance
-│   └── ajustement.py           # ajuste l'offre avec les données d'usage du diagnostic
+│   ├── ajustement.py           # ajuste l'offre avec les données d'usage du diagnostic
+│   └── parrainage.py           # thème 5 : codes, filleuls, anti-triche, récompenses
 ├── server/
 │   └── api.py                  # le serveur FastAPI appelé par l'application
 ├── tests/
-│   └── test_api.py             # 10 tests automatiques de l'API
+│   ├── test_api.py             # 10 tests de la recommandation et de l'ajustement
+│   └── test_parrainage.py      # 7 tests du parrainage
 ├── requirements.txt
 └── pytest.ini
 ```
@@ -65,7 +69,7 @@ Toutes les commandes se lancent **depuis la racine du projet** :
 python -m src.generer_donnees      # 1. crée les 5 000 foyers simulés
 python -m src.entrainer_modele     # 2. entraîne le modèle et affiche sa précision
 python -m src.recommander          # 3. teste le moteur sur 6 exemples de foyers
-pytest                             # 4. lance les 10 tests automatiques
+pytest                             # 4. lance les 17 tests automatiques
 uvicorn server.api:app --reload    # 5. lance le serveur
 ```
 
@@ -133,6 +137,23 @@ Exemple d'envoi :
 | `jours_satures` | Nombre de jours où la connexion a dépassé 85 % |
 | `pieces_signal_faible` | Nombre de pièces où le Wi-Fi est faible |
 | `appareils_max` | Nombre maximum d'appareils connectés en même temps |
+
+---
+
+### Parrainage (thème 5)
+
+| Adresse | Rôle |
+|---|---|
+| `POST /parrainage/code` | Le client (`nom`, `telephone`) reçoit son code, son lien et un message à partager sur WhatsApp |
+| `POST /parrainage/inscription` | Le filleul s'inscrit avec le `code`, son `nom`, `telephone`, `commune` et ses réponses au `questionnaire` → il reçoit son offre personnalisée |
+| `POST /parrainage/filleul/{id}/avancer` | Démo : fait passer le filleul à l'étape suivante (inscrit → abonné → actif 3 mois) |
+| `GET /parrainage/{code}/filleuls` | Le tableau de bord « Mes filleuls » : filleuls, statuts, mois offerts gagnés |
+
+Règles :
+- **Anti-triche** : impossible de se parrainer soi-même, ou d'être parrainé deux fois avec le même numéro.
+- **Zone fibre** : si la commune du filleul n'est pas couverte, il reçoit la Box 4G au lieu d'être perdu (liste de communes simulée).
+- **Récompense** : 1 mois offert pour les deux, seulement quand le filleul est resté abonné 3 mois.
+- Les données sont stockées dans une base SQLite (`data/parrainage.db`), créée automatiquement.
 
 ---
 
