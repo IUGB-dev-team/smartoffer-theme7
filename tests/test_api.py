@@ -33,6 +33,10 @@ def test_petit_budget():
                          nb_pieces=3, budget=20000).json()
     assert res["prix_mensuel"] <= 20000
     assert res["alerte_budget"] is not None
+    # l'offre idéale reste proposée en option, avec le supplément à payer
+    sup = res["offre_superieure"]
+    assert sup["debit_mbps"] > res["debit_mbps"]
+    assert sup["supplement_mensuel"] == sup["prix_mensuel"] - res["prix_mensuel"]
 
 
 def test_non_eligible_box_4g():
@@ -82,3 +86,22 @@ def test_page_demo():
     res = client.get("/demo")
     assert res.status_code == 200
     assert "Fibre SmartOffer" in res.text
+
+
+def test_grille_des_offres():
+    res = client.get("/offres").json()
+    assert len(res["forfaits"]) == 6
+    assert "repeteur" in res["equipements"]
+    assert "hors_fibre" in res
+
+
+def test_budget_trop_petit():
+    res = recommandation(nb_personnes=2, nb_appareils=4, nb_pieces=2, budget=5000).json()
+    assert "Aucune offre fibre" in res["alerte_budget"]
+    assert res["offre_superieure"] is None
+
+
+def test_explication_donne_le_pourquoi():
+    res = recommandation(nb_personnes=4, nb_appareils=12, streaming=True, teletravail=True, nb_pieces=4).json()
+    assert "4 personnes" in res["explication"]
+    assert "il faut environ" in res["explication"]

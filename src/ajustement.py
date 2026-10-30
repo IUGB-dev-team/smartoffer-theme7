@@ -52,7 +52,7 @@ def ajuster(debit_actuel: int, usage: dict) -> dict:
                     "message": f"Vous utilisez peu votre forfait. {nouveau} Mb/s vous suffit "
                                f"et vous économisez {economie} FCFA/mois."}
 
-    return {"action": "garder", "message": "Votre offre est parfaitement adaptée à votre foyer ✓"}
+    return {"action": "garder", "message": "Votre offre est parfaitement adaptée à votre foyer."}
 
 
 if __name__ == "__main__":

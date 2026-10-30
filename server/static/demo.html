@@ -27,7 +27,9 @@
   .tab.active { background: var(--navy); color: #fff; border-color: var(--navy); }
   .panel { display: none; }
   .panel.active { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  @media (max-width: 760px) { .panel.active { grid-template-columns: 1fr; } }
+  #parrain.panel.active { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 960px) { #parrain.panel.active { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 760px) { .panel.active, #parrain.panel.active { grid-template-columns: 1fr; } }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
   .card h2 { margin: 0 0 4px; font-size: 18px; color: var(--navy); }
   .card .sub { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
@@ -115,7 +117,7 @@
       </div>
       <label class="chip" style="margin-top:14px"><input type="checkbox" id="eligible" checked> Adresse couverte par la fibre</label>
       <button class="primary" type="submit">Trouver mon offre</button>
-      <div class="hint">Exemples à essayer : décocher « Adresse couverte » (Box 4G), ou mettre un budget de 15000.</div>
+
     </form>
     <div class="card" id="resReco"><div class="empty">Remplissez le questionnaire pour voir la recommandation de l'IA.</div></div>
   </section>
@@ -181,8 +183,11 @@
         <option>Cocody</option><option>Plateau</option><option>Marcory</option><option>Yopougon</option>
         <option>Grand-Bassam</option><option>Bouaké</option><option>Korhogo</option>
       </select>
-      <div class="hint">Bouaké et Korhogo ne sont pas dans la zone fibre simulée : le filleul recevra la Box 4G.</div>
-      <label style="margin-top:16px">Son questionnaire</label>
+      <div class="hint">Bouaké et Korhogo : hors zone fibre (Box 4G).</div>
+      <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line)">
+        <h2 style="font-size:16px">Le questionnaire du filleul</h2>
+        <p class="sub" style="margin-bottom:0">Pour son propre foyer.</p>
+      </div>
       <div class="row">
         <div><label for="f_personnes">Personnes</label>
           <input type="number" id="f_personnes" min="1" max="15" value="2"></div>
@@ -197,8 +202,12 @@
       </div>
       <label for="f_pieces">Pièces à couvrir</label>
       <input type="number" id="f_pieces" min="1" max="12" value="3">
-      <button class="primary" id="btnInscrire">Inscrire le filleul</button>
-      <div id="resFilleul"></div>
+    </div>
+    <div class="card">
+      <h2>Résultat du filleul</h2>
+      <p class="sub">Son offre personnalisée, puis le suivi de son parrainage.</p>
+      <button class="primary" id="btnInscrire" style="margin-top:0">Inscrire le filleul</button>
+      <div id="resFilleul"><div class="empty">Remplissez les informations du filleul, puis cliquez sur « Inscrire le filleul ».</div></div>
     </div>
   </section>
 </main>
@@ -253,11 +262,11 @@ function afficherOffre(o) {
        <div class="bar"><div style="width:${Math.round(o.confiance * 100)}%"></div></div></div>` : "";
   return `<div class="offer"><div class="speed">${o.debit_mbps >= 1000 ? "1 Gb/s" : o.debit_mbps + " Mb/s"}</div>
       <div class="price">${fcfa(o.prix_mensuel)} / mois</div></div>
-    ${o.alerte_budget ? `<div class="alert warn">⚠ ${o.alerte_budget}</div>` : ""}
+    ${o.alerte_budget ? `<div class="alert warn"><b>Budget :</b> ${o.alerte_budget}</div>` : ""}
+    ${o.offre_superieure ? `<button class="secondary upgrade" type="button">Passer au ${o.offre_superieure.debit_mbps} Mb/s
+        (+${fcfa(o.offre_superieure.supplement_mensuel)} / mois)</button>` : ""}
     <div class="explain">${o.explication}</div>
     ${equip}
-    <div class="kv"><span>Besoin estimé</span><span>${o.besoin_estime_mbps} Mb/s</span></div>
-    <div class="kv"><span>Méthode</span><span>${o.methode}</span></div>
     ${conf}`;
 }
 
@@ -301,8 +310,19 @@ $("formAjust").addEventListener("submit", async (e) => {
 });
 
 // ---------- 3. Parrainage ----------
+// Le client choisit de dépasser son budget pour l'offre idéale
+document.addEventListener("click", async (e) => {
+  if (!e.target.classList.contains("upgrade")) return;
+  const q = lireQuestionnaire(); delete q.budget;
+  try {
+    const o = await appeler("/recommandation", { method: "POST", body: JSON.stringify(q) });
+    $("resReco").innerHTML = `<h2>L'offre recommandée</h2>
+      <div class="alert ok">Offre idéale choisie.</div>` + afficherOffre(o);
+  } catch (err) { $("resReco").innerHTML = erreur(err.message); }
+});
+
 let codeParrain = null;
-const ETAPES = [["inscrit", "Inscrit"], ["abonne", "Abonné"], ["actif_3_mois", "Actif 3 mois"]];
+const ETAPES = [["inscrit", "1. Inscrit"], ["abonne", "2. Abonné"], ["actif_3_mois", "3. Abonné depuis 3 mois"]];
 const etapesHtml = (statut) => {
   const i = ETAPES.findIndex(([k]) => k === statut);
   return `<div class="steps">${ETAPES.map(([, l], j) => `<div class="${j <= i ? "done" : ""}">${l}</div>`).join("")}</div>`;
@@ -313,7 +333,7 @@ async function rafraichirTableau() {
   try {
     const t = await appeler(`/parrainage/${encodeURIComponent(codeParrain)}/filleuls`);
     const lignes = t.filleuls.map((f) => `<tr><td>${f.nom}</td><td>${f.commune}</td><td>${
-      ETAPES.find(([k]) => k === f.statut)?.[1] || f.statut}</td></tr>`).join("");
+      (ETAPES.find(([k]) => k === f.statut)?.[1] || f.statut).replace(/^\d\. /, "")}</td></tr>`).join("");
     $("tableau").innerHTML = `<h2 style="margin-top:18px">Mes filleuls</h2>
       <div class="alert ok">${t.resume}</div>
       ${t.filleuls.length ? `<table><tr><th>Nom</th><th>Commune</th><th>Statut</th></tr>${lignes}</table>`
@@ -346,10 +366,13 @@ $("btnInscrire").addEventListener("click", async () => {
       commune: $("f_commune").value, questionnaire: q }) });
     codeParrain = codeParrain || $("f_code").value.trim();
     $("resFilleul").innerHTML = `
-      <div class="alert ok" style="margin-top:14px">${r.nom || $("f_nom").value} est inscrit(e), parrainé(e) par ${r.parrain}.</div>
+      <div class="alert ok" style="margin-top:14px">${$("f_nom").value}, parrainé(e) par ${r.parrain}</div>
       ${afficherOffre(r.offre_personnalisee)}
+      <h2 style="font-size:16px;margin-top:18px">Suivi du parrainage</h2>
+      <p class="sub" style="margin-bottom:4px">1 mois offert aux deux si le filleul reste abonné 3 mois.</p>
       <div id="suivi">${etapesHtml(r.statut)}</div>
-      <button class="secondary" id="btnAvancer" data-id="${r.filleul_id}">Étape suivante (simulation)</button>
+      <button class="secondary" id="btnAvancer" data-id="${r.filleul_id}">Simuler l'étape suivante</button>
+      <div class="hint">Simulation : fait avancer le temps.</div>
       <div id="recompense"></div>`;
     $("btnAvancer").addEventListener("click", avancer);
     rafraichirTableau();
@@ -362,7 +385,7 @@ async function avancer(e) {
     const r = await appeler(`/parrainage/filleul/${id}/avancer`, { method: "POST" });
     $("suivi").innerHTML = etapesHtml(r.statut);
     if (r.recompense) {
-      $("recompense").innerHTML = `<div class="alert ok">🎉 ${r.recompense}</div>`;
+      $("recompense").innerHTML = `<div class="alert ok">${r.recompense}.</div>`;
       e.target.disabled = true;
     }
     rafraichirTableau();

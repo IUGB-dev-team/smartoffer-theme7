@@ -70,7 +70,7 @@ Toutes les commandes se lancent **depuis la racine du projet** :
 python -m src.generer_donnees      # 1. crée les 5 000 foyers simulés
 python -m src.entrainer_modele     # 2. entraîne le modèle et affiche sa précision
 python -m src.recommander          # 3. teste le moteur sur 6 exemples de foyers
-pytest                             # 4. lance les 18 tests automatiques
+pytest                             # 4. lance les 21 tests automatiques
 uvicorn server.api:app --reload    # 5. lance le serveur
 ```
 
@@ -83,6 +83,10 @@ Pour qu'un coéquipier sur le même Wi-Fi appelle le serveur : `uvicorn server.a
 ---
 
 ## L'API
+
+### `GET /offres`
+
+Renvoie tout le catalogue : les 6 forfaits fibre (débit, prix, prix promo, avantages mobile), les équipements (répéteur, kits FTTR) et la Box 4G. À utiliser pour afficher la grille des prix dans l'app, au lieu de recopier les prix à la main.
 
 ### `POST /recommandation`
 
@@ -109,8 +113,9 @@ Réponse :
   "debit_mbps": 200,
   "prix_mensuel": 20000,
   "equipement": {"nom": "FTTR 1 principal + 2 secondaires", "prix": 167500},
-  "explication": "200 Mb/s, car 4 personne(s), 12 appareils, du streaming, du télétravail. Avec 4 pièces, on ajoute : FTTR 1 principal + 2 secondaires.",
+  "explication": "Pour 4 personnes, 12 appareils, streaming et télétravail, il faut environ 168 Mb/s : le 200 Mb/s suffit.",
   "alerte_budget": null,
+  "offre_superieure": null,
   "methode": "régression logistique",
   "confiance": 0.82
 }
@@ -157,6 +162,57 @@ Règles :
 - **Zone fibre** : si la commune du filleul n'est pas couverte, il reçoit la Box 4G au lieu d'être perdu (liste de communes simulée).
 - **Récompense** : 1 mois offert pour les deux, seulement quand le filleul est resté abonné 3 mois.
 - Les données sont stockées dans une base SQLite (`data/parrainage.db`), créée automatiquement.
+
+---
+
+## Pour l'équipe : intégrer dans l'application
+
+Ce module fournit l'IA et l'API. Les écrans de l'application sont faits par l'équipe front-end (React Native). Voici comment s'en servir.
+
+### Deux façons de choisir son offre
+
+Proposer deux boutons au client :
+
+| Bouton | Ce qui se passe | Adresse à appeler |
+|---|---|---|
+| **« Je sais ce que je veux »** | Afficher la grille des prix, le client choisit lui-même son forfait | `GET /offres` |
+| **« Aidez-moi à choisir »** | Afficher le questionnaire (6 questions), puis l'offre recommandée par l'IA | `POST /recommandation` |
+
+Dans les deux cas, l'**ajustement** (`POST /ajustement`) fonctionne ensuite : si le client a choisi une offre trop grosse ou trop petite, l'IA le lui signalera après quelques semaines d'usage.
+
+### Budget et offre supérieure
+
+Si l'offre idéale dépasse le `budget` du client, l'API propose la meilleure offre abordable et renvoie :
+- `alerte_budget` : une phrase courte qui explique pourquoi (ex. « Avec 20 000 FCFA, on vous propose le 200 Mb/s. L'idéal : 300 Mb/s (+5 000 FCFA/mois). ») ;
+- `offre_superieure` : l'offre idéale, avec `debit_mbps`, `prix_mensuel` et `supplement_mensuel`.
+
+Côté application : afficher un bouton **« Passer au 300 Mb/s (+5 000 FCFA / mois) »** quand `offre_superieure` n'est pas `null`. Si le client clique, rappeler `POST /recommandation` sans le budget.
+
+### Grille des prix
+
+- Toujours lire les prix avec `GET /offres` : si Moov change un prix, on modifie seulement `data/catalogue.json` et l'app se met à jour.
+- Le 50 Mb/s a un `prix_promo` (7 500 FCFA) : afficher le prix promo barré à côté du prix normal (15 000 FCFA).
+
+### Brancher le diagnostic (thème 3)
+
+Envoyer les 6 données d'usage décrites dans `POST /ajustement` (débit souscrit, jours observés, part du débit utilisée le soir, jours saturés, pièces avec Wi-Fi faible, appareils max). Il faut au moins 14 jours de données pour que l'IA décide.
+
+### Appeler l'API depuis React Native
+
+```javascript
+const reponse = await fetch(`${API}/recommandation`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ nb_personnes: 4, nb_appareils: 12, streaming: true, teletravail: true, nb_pieces: 4 }),
+});
+const offre = await reponse.json();   // offre.debit_mbps, offre.explication, offre.confiance…
+```
+
+`API` = l'adresse du serveur. Sur un téléphone, `127.0.0.1` ne marche pas : utiliser l'adresse IPv4 de l'ordinateur qui fait tourner le serveur (même Wi-Fi, avec `--host 0.0.0.0`), ou une adresse en ligne si le serveur est déployé.
+
+### Tester sans l'application
+
+La page **`/demo`** permet de tout essayer dans le navigateur : recommandation, ajustement (données simulées) et parrainage.
 
 ---
 

@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 
 from src.ajustement import ajuster
 from src.recommander import recommander
+from src.regles import CATALOGUE
 from src import parrainage
 
 app = FastAPI(
@@ -68,7 +69,14 @@ def accueil():
 @app.get("/demo", include_in_schema=False)
 def demo():
     """La page de démo : questionnaire, ajustement et parrainage, dans le navigateur."""
-    return FileResponse(Path(__file__).parent / "static" / "demo.html")
+    # no-store : le navigateur recharge toujours la dernière version de la page
+    return FileResponse(Path(__file__).parent / "static" / "demo.html", headers={"Cache-Control": "no-store"})
+
+
+@app.get("/offres")
+def get_offres():
+    """Tout le catalogue Moov (forfaits, équipements, Box 4G), pour afficher la grille des prix dans l'app."""
+    return {cle: valeur for cle, valeur in CATALOGUE.items() if not cle.startswith("_")}
 
 
 @app.post("/recommandation")

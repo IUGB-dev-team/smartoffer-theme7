@@ -12,6 +12,16 @@ from .regles import (CATALOGUE, COLONNES, PALIERS, besoin_mbps, palier_par_regle
 MODELE = joblib.load(MODELE_PATH) if MODELE_PATH.exists() else None
 
 
+def _fcfa(n: int) -> str:
+    """15000 → '15 000'"""
+    return f"{n:,}".replace(",", " ")
+
+
+def _liste(mots: list) -> str:
+    """['a', 'b', 'c'] → 'a, b et c'"""
+    return mots[0] if len(mots) == 1 else ", ".join(mots[:-1]) + " et " + mots[-1]
+
+
 def recommander(r: dict, promo: bool = True) -> dict:
     # 1. Pas éligible à la fibre → on ne perd pas le client : Box 4G
     if not r.get("eligible", True):
@@ -36,15 +46,25 @@ def recommander(r: dict, promo: bool = True) -> dict:
         debit = 1000
     debit = meilleur_rapport(debit, promo)
 
-    # 3. Le budget : si l'offre idéale est trop chère, on le dit honnêtement
+    # 3. Le budget : si l'offre idéale est trop chère, on propose la meilleure offre abordable,
+    #    on explique pourquoi, et on garde l'offre idéale en option (« passer à l'offre supérieure »)
+    debit_ideal = debit
     alerte_budget = None
+    offre_superieure = None
     budget = r.get("budget")
     if budget and prix_actuel(debit, promo) > budget:
         abordables = [p for p in PALIERS if prix_actuel(p, promo) <= budget]
         if abordables:
-            alerte_budget = (f"L'idéal serait {debit} Mb/s, mais dans votre budget "
-                             f"nous vous proposons {abordables[-1]} Mb/s.")
             debit = abordables[-1]
+            supplement = prix_actuel(debit_ideal, promo) - prix_actuel(debit, promo)
+            alerte_budget = (f"Avec {_fcfa(budget)} FCFA, on vous propose le {debit} Mb/s. "
+                             f"L'idéal : {debit_ideal} Mb/s (+{_fcfa(supplement)} FCFA/mois).")
+            offre_superieure = {"debit_mbps": debit_ideal,
+                                "prix_mensuel": prix_actuel(debit_ideal, promo),
+                                "supplement_mensuel": supplement}
+        else:
+            alerte_budget = (f"Aucune offre fibre à {_fcfa(budget)} FCFA. "
+                             f"La moins chère : {_fcfa(prix_actuel(PALIERS[0], promo))} FCFA/mois.")
 
     # La confiance ne vaut que pour l'offre choisie par le modèle :
     # si une règle (budget, 1 Gb/s, meilleur prix) l'a changée, on ne l'affiche pas.
@@ -54,13 +74,19 @@ def recommander(r: dict, promo: bool = True) -> dict:
     # 4. L'équipement selon le nombre de pièces
     equip = equipement_pour(r["nb_pieces"])
 
-    # 5. L'explication (le client doit comprendre POURQUOI)
-    raisons = [f"{r['nb_personnes']} personne(s)", f"{r['nb_appareils']} appareils"]
-    raisons += [nom for cle, nom in [("streaming", "du streaming"), ("gaming", "du jeu en ligne"),
-                                     ("teletravail", "du télétravail")] if r.get(cle)]
-    explication = f"{debit} Mb/s, car {', '.join(raisons)}."
-    if equip != "aucun":
-        explication += f" Avec {r['nb_pieces']} pièces, on ajoute : {CATALOGUE['equipements'][equip]['nom']}."
+    # 5. L'explication : courte, avec le POURQUOI
+    besoin = round(besoin_mbps(r))
+    n, a = r["nb_personnes"], r["nb_appareils"]
+    profil = [f"{n} personne{'s' if n > 1 else ''}", f"{a} appareil{'s' if a > 1 else ''}"]
+    profil += [nom for cle, nom in [("streaming", "streaming"), ("gaming", "jeu en ligne"),
+                                    ("teletravail", "télétravail")] if r.get(cle)]
+    if offre_superieure:
+        verdict = f"le {debit} Mb/s peut ralentir le soir"
+    elif debit >= besoin:
+        verdict = f"le {debit} Mb/s suffit"
+    else:
+        verdict = f"le {debit} Mb/s est le plus adapté"
+    explication = f"Pour {_liste(profil)}, il faut environ {besoin} Mb/s : {verdict}."
 
     return {
         "type": "fibre",
@@ -70,6 +96,7 @@ def recommander(r: dict, promo: bool = True) -> dict:
         "besoin_estime_mbps": round(besoin_mbps(r)),
         "explication": explication,
         "alerte_budget": alerte_budget,
+        "offre_superieure": offre_superieure,
         "methode": methode,
         "confiance": round(confiance, 2) if confiance is not None else None,
     }
@@ -88,7 +115,7 @@ if __name__ == "__main__":
         res = recommander(r)
         print(f"\n▶ {nom}\n  {res['explication']}")
         if res.get("alerte_budget"):
-            print(f"  ⚠ {res['alerte_budget']}")
+            print(f"  Budget : {res['alerte_budget']}")
         print(f"  Prix : {res['prix_mensuel']} FCFA/mois")
         if res.get("confiance"):
             print(f"  Confiance du modèle : {res['confiance']:.0%}")
