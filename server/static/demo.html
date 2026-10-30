@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fibre SmartOffer · Démo</title>
+<style>
+  :root {
+    --navy: #0E2A4F; --blue: #1C63B7; --orange: #F08A24; --orange-text: #A94E0B;
+    --bg: #F4F6F2; --card: #FFFFFF; --line: #DCE2EA; --text: #1F2937; --muted: #5B6678;
+    --ok: #1E7B4F; --ok-bg: #E4F4EC; --warn-bg: #FCE3CC; --err: #B42318; --err-bg: #FDE7E5;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+         background: var(--bg); color: var(--text); line-height: 1.45; }
+  header { background: var(--navy); color: #fff; padding: 20px 16px; }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 22px; }
+  header p { margin: 2px 0 0; color: #C9D6E6; font-size: 14px; }
+  .badge { background: var(--orange); color: var(--navy); font-weight: 700; font-size: 12px;
+           padding: 4px 10px; border-radius: 999px; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  main { padding: 20px 16px 48px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tab { border: 1px solid var(--line); background: var(--card); color: var(--navy); padding: 10px 16px;
+         border-radius: 999px; font-weight: 600; cursor: pointer; font-size: 14px; }
+  .tab.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .panel { display: none; }
+  .panel.active { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px) { .panel.active { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  .card h2 { margin: 0 0 4px; font-size: 18px; color: var(--navy); }
+  .card .sub { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
+  label { display: block; font-size: 14px; font-weight: 600; margin: 12px 0 6px; }
+  input[type=number], input[type=text], input[type=tel], select {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 15px; background: #fff; }
+  .checks { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px;
+          padding: 8px 12px; font-size: 14px; cursor: pointer; font-weight: 500; margin: 0; }
+  .chip input { accent-color: var(--blue); }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  button.primary { margin-top: 18px; width: 100%; background: var(--orange); color: var(--navy); border: 0;
+                   font-weight: 700; font-size: 16px; padding: 12px; border-radius: 10px; cursor: pointer; }
+  button.secondary { margin-top: 10px; width: 100%; background: #fff; color: var(--navy); border: 1px solid var(--navy);
+                     font-weight: 600; font-size: 14px; padding: 10px; border-radius: 10px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  .empty { color: var(--muted); font-size: 14px; text-align: center; padding: 40px 10px; }
+  .offer { text-align: center; padding: 6px 0 10px; }
+  .offer .speed { font-size: 46px; font-weight: 800; color: var(--navy); line-height: 1; }
+  .offer .price { font-size: 18px; color: var(--orange-text); font-weight: 700; margin-top: 6px; }
+  .kv { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .kv span:first-child { color: var(--muted); }
+  .kv span:last-child { font-weight: 600; text-align: right; }
+  .explain { background: #EEF3FA; border-radius: 10px; padding: 12px; font-size: 14px; margin: 10px 0; }
+  .alert { border-radius: 10px; padding: 10px 12px; font-size: 14px; margin: 10px 0; }
+  .alert.warn { background: var(--warn-bg); }
+  .alert.ok { background: var(--ok-bg); color: var(--ok); }
+  .alert.err { background: var(--err-bg); color: var(--err); }
+  .bar { height: 10px; background: #E6EBF2; border-radius: 999px; overflow: hidden; margin-top: 6px; }
+  .bar > div { height: 100%; background: var(--blue); }
+  .action { display: inline-block; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: .04em;
+            padding: 4px 10px; border-radius: 999px; background: var(--navy); color: #fff; }
+  .code { font-family: ui-monospace, Consolas, monospace; font-size: 20px; font-weight: 700; color: var(--navy);
+          background: #EEF3FA; padding: 10px; border-radius: 10px; text-align: center; letter-spacing: .03em; }
+  .steps { display: flex; gap: 6px; margin: 10px 0; }
+  .steps div { flex: 1; text-align: center; font-size: 12px; padding: 8px 4px; border-radius: 8px; background: #E6EBF2; color: var(--muted); }
+  .steps div.done { background: var(--blue); color: #fff; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
+  th, td { text-align: left; padding: 8px 6px; border-top: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 16px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div>
+      <h1>Fibre SmartOffer</h1>
+      <p>L'IA qui recommande l'offre fibre Moov adaptée à chaque foyer</p>
+    </div>
+    <span class="badge">Démo · Thèmes 7 et 5</span>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-tab="reco">1 · Recommandation</button>
+    <button class="tab" data-tab="ajust">2 · Ajustement</button>
+    <button class="tab" data-tab="parrain">3 · Parrainage</button>
+  </div>
+
+  <!-- ========== 1. RECOMMANDATION ========== -->
+  <section class="panel active" id="reco">
+    <form class="card" id="formReco">
+      <h2>Le questionnaire</h2>
+      <p class="sub">6 questions pour trouver l'offre idéale.</p>
+      <div class="row">
+        <div><label for="nb_personnes">Personnes dans le foyer</label>
+          <input type="number" id="nb_personnes" min="1" max="15" value="4" required></div>
+        <div><label for="nb_appareils">Appareils connectés en même temps</label>
+          <input type="number" id="nb_appareils" min="1" max="50" value="12" required></div>
+      </div>
+      <label>Vos usages</label>
+      <div class="checks">
+        <label class="chip"><input type="checkbox" id="streaming" checked> Streaming</label>
+        <label class="chip"><input type="checkbox" id="gaming"> Jeu en ligne</label>
+        <label class="chip"><input type="checkbox" id="teletravail" checked> Télétravail / cours</label>
+      </div>
+      <div class="row">
+        <div><label for="nb_pieces">Pièces à couvrir</label>
+          <input type="number" id="nb_pieces" min="1" max="12" value="4" required></div>
+        <div><label for="budget">Budget mensuel (FCFA)</label>
+          <input type="number" id="budget" min="0" step="1000" placeholder="Facultatif"></div>
+      </div>
+      <label class="chip" style="margin-top:14px"><input type="checkbox" id="eligible" checked> Adresse couverte par la fibre</label>
+      <button class="primary" type="submit">Trouver mon offre</button>
+      <div class="hint">Exemples à essayer : décocher « Adresse couverte » (Box 4G), ou mettre un budget de 15000.</div>
+    </form>
+    <div class="card" id="resReco"><div class="empty">Remplissez le questionnaire pour voir la recommandation de l'IA.</div></div>
+  </section>
+
+  <!-- ========== 2. AJUSTEMENT ========== -->
+  <section class="panel" id="ajust">
+    <form class="card" id="formAjust">
+      <h2>L'usage réel du client</h2>
+      <p class="sub">Données venant du diagnostic (thème 3), simulées pour la démo.</p>
+      <label for="scenario">Scénario prêt à l'emploi</label>
+      <select id="scenario">
+        <option value="">— Choisir —</option>
+        <option value="sature">Connexion saturée le soir</option>
+        <option value="sous">Forfait sous-utilisé</option>
+        <option value="wifi">Wi-Fi faible dans certaines pièces</option>
+        <option value="ok">Tout va bien</option>
+        <option value="tot">Trop tôt (7 jours de données)</option>
+      </select>
+      <div class="row">
+        <div><label for="debit_actuel">Débit souscrit (Mb/s)</label>
+          <select id="debit_actuel"><option>50</option><option>100</option><option selected>200</option><option>300</option><option>500</option><option>1000</option></select></div>
+        <div><label for="jours_observes">Jours observés</label>
+          <input type="number" id="jours_observes" min="0" value="21"></div>
+      </div>
+      <label for="taux">Part du débit utilisée le soir : <span id="tauxVal">92 %</span></label>
+      <input type="range" id="taux" min="0" max="100" value="92" style="width:100%">
+      <div class="row">
+        <div><label for="jours_satures">Jours saturés</label>
+          <input type="number" id="jours_satures" min="0" value="16"></div>
+        <div><label for="appareils_max">Appareils max</label>
+          <input type="number" id="appareils_max" min="0" value="14"></div>
+      </div>
+      <label for="pieces_signal_faible">Pièces avec Wi-Fi faible</label>
+      <input type="number" id="pieces_signal_faible" min="0" value="0">
+      <button class="primary" type="submit">Analyser l'usage</button>
+    </form>
+    <div class="card" id="resAjust"><div class="empty">Choisissez un scénario ou entrez des valeurs, puis lancez l'analyse.</div></div>
+  </section>
+
+  <!-- ========== 3. PARRAINAGE ========== -->
+  <section class="panel" id="parrain">
+    <div class="card">
+      <h2>Le parrain</h2>
+      <p class="sub">Un client satisfait reçoit son code à partager.</p>
+      <div class="row">
+        <div><label for="p_nom">Nom</label><input type="text" id="p_nom" value="Noura"></div>
+        <div><label for="p_tel">Téléphone</label><input type="tel" id="p_tel" value="0707000001"></div>
+      </div>
+      <button class="primary" id="btnCode">Obtenir mon code</button>
+      <div id="resCode"></div>
+      <div id="tableau"></div>
+    </div>
+    <div class="card">
+      <h2>Le filleul</h2>
+      <p class="sub">Il s'inscrit avec le code et reçoit son offre personnalisée.</p>
+      <label for="f_code">Code de parrainage</label><input type="text" id="f_code" placeholder="MOOV-…">
+      <div class="row">
+        <div><label for="f_nom">Nom</label><input type="text" id="f_nom" value="Awa"></div>
+        <div><label for="f_tel">Téléphone</label><input type="tel" id="f_tel" value="0505000002"></div>
+      </div>
+      <label for="f_commune">Commune</label>
+      <select id="f_commune">
+        <option>Cocody</option><option>Plateau</option><option>Marcory</option><option>Yopougon</option>
+        <option>Grand-Bassam</option><option>Bouaké</option><option>Korhogo</option>
+      </select>
+      <div class="hint">Bouaké et Korhogo ne sont pas dans la zone fibre simulée : le filleul recevra la Box 4G.</div>
+      <label style="margin-top:16px">Son questionnaire</label>
+      <div class="row">
+        <div><label for="f_personnes">Personnes</label>
+          <input type="number" id="f_personnes" min="1" max="15" value="2"></div>
+        <div><label for="f_appareils">Appareils</label>
+          <input type="number" id="f_appareils" min="1" max="50" value="5"></div>
+      </div>
+      <label>Ses usages</label>
+      <div class="checks">
+        <label class="chip"><input type="checkbox" id="f_streaming" checked> Streaming</label>
+        <label class="chip"><input type="checkbox" id="f_gaming"> Jeu en ligne</label>
+        <label class="chip"><input type="checkbox" id="f_teletravail"> Télétravail / cours</label>
+      </div>
+      <label for="f_pieces">Pièces à couvrir</label>
+      <input type="number" id="f_pieces" min="1" max="12" value="3">
+      <button class="primary" id="btnInscrire">Inscrire le filleul</button>
+      <div id="resFilleul"></div>
+    </div>
+  </section>
+</main>
+
+<footer>Concours Moov Application 2026 · IUGB · Données de foyers et zones fibre simulées pour la démo</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const fcfa = (n) => n.toLocaleString("fr-FR") + " FCFA";
+
+async function appeler(url, options = {}) {
+  const res = await fetch(url, { headers: { "Content-Type": "application/json" }, ...options });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const detail = typeof data.detail === "string" ? data.detail
+      : Array.isArray(data.detail) ? "Réponse invalide : vérifiez les valeurs saisies." : "Erreur du serveur.";
+    throw new Error(detail);
+  }
+  return data;
+}
+const erreur = (msg) => `<div class="alert err">${msg}</div>`;
+
+// ---------- Onglets ----------
+document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => {
+  document.querySelectorAll(".tab").forEach((x) => x.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach((x) => x.classList.remove("active"));
+  t.classList.add("active");
+  $(t.dataset.tab).classList.add("active");
+}));
+
+// ---------- 1. Recommandation ----------
+function lireQuestionnaire() {
+  const q = {
+    nb_personnes: +$("nb_personnes").value, nb_appareils: +$("nb_appareils").value,
+    streaming: $("streaming").checked, gaming: $("gaming").checked, teletravail: $("teletravail").checked,
+    nb_pieces: +$("nb_pieces").value, eligible: $("eligible").checked,
+  };
+  if ($("budget").value) q.budget = +$("budget").value;
+  return q;
+}
+
+function afficherOffre(o) {
+  if (o.type === "hors_fibre") {
+    return `<div class="offer"><div class="speed" style="font-size:32px">${o.offre}</div>
+      <div class="price">${fcfa(o.prix_mensuel)}</div></div>
+      <div class="explain">${o.explication}</div>`;
+  }
+  const equip = o.equipement && o.equipement.prix > 0
+    ? `<div class="kv"><span>Équipement conseillé</span><span>${o.equipement.nom} · ${fcfa(o.equipement.prix)}</span></div>` : "";
+  const conf = o.confiance != null
+    ? `<div class="kv" style="display:block"><span>Confiance du modèle : <b>${Math.round(o.confiance * 100)} %</b></span>
+       <div class="bar"><div style="width:${Math.round(o.confiance * 100)}%"></div></div></div>` : "";
+  return `<div class="offer"><div class="speed">${o.debit_mbps >= 1000 ? "1 Gb/s" : o.debit_mbps + " Mb/s"}</div>
+      <div class="price">${fcfa(o.prix_mensuel)} / mois</div></div>
+    ${o.alerte_budget ? `<div class="alert warn">⚠ ${o.alerte_budget}</div>` : ""}
+    <div class="explain">${o.explication}</div>
+    ${equip}
+    <div class="kv"><span>Besoin estimé</span><span>${o.besoin_estime_mbps} Mb/s</span></div>
+    <div class="kv"><span>Méthode</span><span>${o.methode}</span></div>
+    ${conf}`;
+}
+
+$("formReco").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("resReco").innerHTML = `<div class="empty">Calcul en cours…</div>`;
+  try {
+    const o = await appeler("/recommandation", { method: "POST", body: JSON.stringify(lireQuestionnaire()) });
+    $("resReco").innerHTML = `<h2>L'offre recommandée</h2>` + afficherOffre(o);
+  } catch (err) { $("resReco").innerHTML = erreur(err.message); }
+});
+
+// ---------- 2. Ajustement ----------
+const SCENARIOS = {
+  sature: { debit_actuel: 200, jours_observes: 21, taux: 92, jours_satures: 16, appareils_max: 14, pieces_signal_faible: 0 },
+  sous:   { debit_actuel: 300, jours_observes: 21, taux: 18, jours_satures: 0,  appareils_max: 4,  pieces_signal_faible: 0 },
+  wifi:   { debit_actuel: 200, jours_observes: 21, taux: 55, jours_satures: 2,  appareils_max: 8,  pieces_signal_faible: 2 },
+  ok:     { debit_actuel: 200, jours_observes: 21, taux: 60, jours_satures: 1,  appareils_max: 9,  pieces_signal_faible: 0 },
+  tot:    { debit_actuel: 200, jours_observes: 7,  taux: 90, jours_satures: 5,  appareils_max: 10, pieces_signal_faible: 0 },
+};
+$("taux").addEventListener("input", () => $("tauxVal").textContent = $("taux").value + " %");
+$("scenario").addEventListener("change", () => {
+  const s = SCENARIOS[$("scenario").value]; if (!s) return;
+  for (const [k, v] of Object.entries(s)) $(k).value = v;
+  $("tauxVal").textContent = s.taux + " %";
+});
+const LIBELLES = { monter: "Offre supérieure", descendre: "Offre moins chère", equipement: "Équipement Wi-Fi",
+                   garder: "Garder l'offre", attendre: "Attendre" };
+$("formAjust").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const u = { debit_actuel: +$("debit_actuel").value, jours_observes: +$("jours_observes").value,
+              taux_pointe_moyen: +$("taux").value / 100, jours_satures: +$("jours_satures").value,
+              pieces_signal_faible: +$("pieces_signal_faible").value, appareils_max: +$("appareils_max").value };
+  try {
+    const r = await appeler("/ajustement", { method: "POST", body: JSON.stringify(u) });
+    $("resAjust").innerHTML = `<h2>Le conseil de l'IA</h2>
+      <p><span class="action">${LIBELLES[r.action] || r.action}</span></p>
+      <div class="explain" style="font-size:16px">${r.message}</div>
+      ${r.nouveau_debit ? `<div class="kv"><span>Nouveau débit proposé</span><span>${r.nouveau_debit} Mb/s</span></div>` : ""}`;
+  } catch (err) { $("resAjust").innerHTML = erreur(err.message); }
+});
+
+// ---------- 3. Parrainage ----------
+let codeParrain = null;
+const ETAPES = [["inscrit", "Inscrit"], ["abonne", "Abonné"], ["actif_3_mois", "Actif 3 mois"]];
+const etapesHtml = (statut) => {
+  const i = ETAPES.findIndex(([k]) => k === statut);
+  return `<div class="steps">${ETAPES.map(([, l], j) => `<div class="${j <= i ? "done" : ""}">${l}</div>`).join("")}</div>`;
+};
+
+async function rafraichirTableau() {
+  if (!codeParrain) return;
+  try {
+    const t = await appeler(`/parrainage/${encodeURIComponent(codeParrain)}/filleuls`);
+    const lignes = t.filleuls.map((f) => `<tr><td>${f.nom}</td><td>${f.commune}</td><td>${
+      ETAPES.find(([k]) => k === f.statut)?.[1] || f.statut}</td></tr>`).join("");
+    $("tableau").innerHTML = `<h2 style="margin-top:18px">Mes filleuls</h2>
+      <div class="alert ok">${t.resume}</div>
+      ${t.filleuls.length ? `<table><tr><th>Nom</th><th>Commune</th><th>Statut</th></tr>${lignes}</table>`
+                          : `<div class="hint">Aucun filleul pour l'instant.</div>`}`;
+  } catch (err) { $("tableau").innerHTML = erreur(err.message); }
+}
+
+$("btnCode").addEventListener("click", async () => {
+  try {
+    const r = await appeler("/parrainage/code", { method: "POST",
+      body: JSON.stringify({ nom: $("p_nom").value, telephone: $("p_tel").value }) });
+    codeParrain = r.code;
+    $("f_code").value = r.code;
+    $("resCode").innerHTML = `<label>Code de parrainage</label><div class="code">${r.code}</div>
+      <label>Message à partager sur WhatsApp</label><div class="explain">${r.message_a_partager}</div>`;
+    rafraichirTableau();
+  } catch (err) { $("resCode").innerHTML = erreur(err.message); }
+});
+
+$("btnInscrire").addEventListener("click", async () => {
+  // Le filleul répond à SON propre questionnaire : son offre est calculée pour son foyer à lui
+  const q = {
+    nb_personnes: +$("f_personnes").value, nb_appareils: +$("f_appareils").value,
+    streaming: $("f_streaming").checked, gaming: $("f_gaming").checked,
+    teletravail: $("f_teletravail").checked, nb_pieces: +$("f_pieces").value,
+  };
+  try {
+    const r = await appeler("/parrainage/inscription", { method: "POST", body: JSON.stringify({
+      code: $("f_code").value.trim(), nom: $("f_nom").value, telephone: $("f_tel").value,
+      commune: $("f_commune").value, questionnaire: q }) });
+    codeParrain = codeParrain || $("f_code").value.trim();
+    $("resFilleul").innerHTML = `
+      <div class="alert ok" style="margin-top:14px">${r.nom || $("f_nom").value} est inscrit(e), parrainé(e) par ${r.parrain}.</div>
+      ${afficherOffre(r.offre_personnalisee)}
+      <div id="suivi">${etapesHtml(r.statut)}</div>
+      <button class="secondary" id="btnAvancer" data-id="${r.filleul_id}">Étape suivante (simulation)</button>
+      <div id="recompense"></div>`;
+    $("btnAvancer").addEventListener("click", avancer);
+    rafraichirTableau();
+  } catch (err) { $("resFilleul").innerHTML = erreur(err.message); }
+});
+
+async function avancer(e) {
+  const id = e.target.dataset.id;
+  try {
+    const r = await appeler(`/parrainage/filleul/${id}/avancer`, { method: "POST" });
+    $("suivi").innerHTML = etapesHtml(r.statut);
+    if (r.recompense) {
+      $("recompense").innerHTML = `<div class="alert ok">🎉 ${r.recompense}</div>`;
+      e.target.disabled = true;
+    }
+    rafraichirTableau();
+  } catch (err) { $("recompense").innerHTML = erreur(err.message); }
+}
+</script>
+</body>
+</html>

@@ -76,3 +76,9 @@ def test_offre_adaptee_garder():
 def test_trop_tot_attendre():
     res = ajustement(debit_actuel=200, jours_observes=7, taux_pointe_moyen=0.9, jours_satures=5)
     assert res["action"] == "attendre"
+
+
+def test_page_demo():
+    res = client.get("/demo")
+    assert res.status_code == 200
+    assert "Fibre SmartOffer" in res.text

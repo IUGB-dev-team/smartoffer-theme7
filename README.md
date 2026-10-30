@@ -39,7 +39,8 @@ smartoffer-theme7/
 │   ├── ajustement.py           # ajuste l'offre avec les données d'usage du diagnostic
 │   └── parrainage.py           # thème 5 : codes, filleuls, anti-triche, récompenses
 ├── server/
-│   └── api.py                  # le serveur FastAPI appelé par l'application
+│   ├── api.py                  # le serveur FastAPI appelé par l'application
+│   └── static/demo.html        # la page de démo (questionnaire, ajustement, parrainage)
 ├── tests/
 │   ├── test_api.py             # 10 tests de la recommandation et de l'ajustement
 │   └── test_parrainage.py      # 7 tests du parrainage
@@ -69,11 +70,13 @@ Toutes les commandes se lancent **depuis la racine du projet** :
 python -m src.generer_donnees      # 1. crée les 5 000 foyers simulés
 python -m src.entrainer_modele     # 2. entraîne le modèle et affiche sa précision
 python -m src.recommander          # 3. teste le moteur sur 6 exemples de foyers
-pytest                             # 4. lance les 17 tests automatiques
+pytest                             # 4. lance les 18 tests automatiques
 uvicorn server.api:app --reload    # 5. lance le serveur
 ```
 
-Ensuite, ouvrir **http://127.0.0.1:8000/docs** dans le navigateur pour tester l'API.
+Ensuite, ouvrir dans le navigateur :
+- **http://127.0.0.1:8000/demo** : la page de démo, pour tester comme un vrai client (recommandation, ajustement, parrainage) ;
+- **http://127.0.0.1:8000/docs** : la documentation technique de l'API.
 
 Pour qu'un coéquipier sur le même Wi-Fi appelle le serveur : `uvicorn server.api:app --host 0.0.0.0 --port 8000`, puis utiliser l'adresse IPv4 de l'ordinateur (`ipconfig`).
 

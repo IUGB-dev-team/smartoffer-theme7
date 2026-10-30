@@ -4,10 +4,12 @@ Le serveur que l'application mobile appelle.
 Lancer (depuis la racine du projet) :  uvicorn server.api:app --reload
 Tester :  ouvrir http://127.0.0.1:8000/docs dans le navigateur
 """
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from src.ajustement import ajuster
@@ -60,7 +62,13 @@ class Usage(BaseModel):
 
 @app.get("/")
 def accueil():
-    return {"service": "Fibre SmartOffer", "statut": "ok", "documentation": "/docs"}
+    return {"service": "Fibre SmartOffer", "statut": "ok", "documentation": "/docs", "demo": "/demo"}
+
+
+@app.get("/demo", include_in_schema=False)
+def demo():
+    """La page de démo : questionnaire, ajustement et parrainage, dans le navigateur."""
+    return FileResponse(Path(__file__).parent / "static" / "demo.html")
 
 
 @app.post("/recommandation")
