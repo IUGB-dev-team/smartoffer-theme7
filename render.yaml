@@ -1,0 +1,13 @@
+# Render : héberge l'API Python (FastAPI + modèle). Plan gratuit.
+# Le serveur s'endort après 15 min sans visite ; le premier appel le réveille (environ 1 minute).
+services:
+  - type: web
+    name: smartoffer-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server.api:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
