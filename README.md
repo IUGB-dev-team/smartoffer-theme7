@@ -247,6 +247,6 @@ Offres relevées sur [mafibremoov.ci](https://www.mafibremoov.ci/) et [moov-afri
 - **Render** fait tourner l'API Python. La configuration est dans `render.yaml`.
 - **Netlify** affiche la page démo et transmet les appels à Render. La configuration est dans `netlify.toml`.
 
-Si l'adresse Render n'est pas `smartoffer-api.onrender.com`, il faut la remplacer dans `netlify.toml`.
+Si l'adresse Render n'est pas `smartoffer-api-zirj.onrender.com`, il faut la remplacer dans `netlify.toml`.
 
 Sur le plan gratuit de Render, le serveur s'endort après 15 minutes sans visite. Le premier appel le réveille, ce qui prend environ 1 minute.
