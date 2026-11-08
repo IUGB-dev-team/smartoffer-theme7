@@ -350,7 +350,12 @@ const chargement = `<div class="loading"><div class="spinner"></div>Calcul en co
 const erreur = (msg) => `<div class="note err">${msg}</div>`;
 
 // Appel au serveur. Si le serveur gratuit dort, on prévient l'utilisateur.
+// En ligne (Netlify), la page appelle directement le serveur Python hébergé sur Render.
+// En local (uvicorn), elle appelle le même serveur qui l'affiche.
+const API = location.hostname.endsWith("netlify.app") ? "https://smartoffer-api-zirj.onrender.com" : "";
+
 async function appeler(url, options = {}) {
+  url = API + url;
   const minuteur = setTimeout(() => $("reveil").classList.add("show"), 2500);
   try {
     const res = await fetch(url, { headers: { "Content-Type": "application/json" }, ...options });

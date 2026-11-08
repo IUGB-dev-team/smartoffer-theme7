@@ -1,6 +1,6 @@
 # Netlify : affiche la page démo.
-# Les appels à l'API sont transmis au serveur Python hébergé sur Render.
-# Si l'adresse Render est différente, remplacer smartoffer-api-zirj.onrender.com partout ci-dessous.
+# La page appelle directement l'API Python hébergée sur Render
+# (adresse dans server/static/demo.html, variable API).
 
 [build]
   publish = "server/static"
@@ -9,27 +9,3 @@
   from = "/"
   to = "/demo.html"
   status = 200
-
-[[redirects]]
-  from = "/offres"
-  to = "https://smartoffer-api-zirj.onrender.com/offres"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/recommandation"
-  to = "https://smartoffer-api-zirj.onrender.com/recommandation"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/ajustement"
-  to = "https://smartoffer-api-zirj.onrender.com/ajustement"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/parrainage/*"
-  to = "https://smartoffer-api-zirj.onrender.com/parrainage/:splat"
-  status = 200
-  force = true
